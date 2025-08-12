@@ -5,26 +5,46 @@ const { createNotification } = require('../controllers/notificationController');
 class NotificationService {
   static async sendInterestBasedNotifications(post, hashtags = [], category = '', communityId = null) {
     try {
+      console.log('Debug - Post author:', post.author);
+      console.log('Debug - Hashtags:', hashtags);
+      console.log('Debug - Category:', category);
+      
       const users = await User.find({ 
         interests: { $exists: true, $ne: [] },
         _id: { $ne: post.author }
       });
 
-      const matchingUsers = users.filter(user =>
-        user.interests.some(interest => {
+      console.log('Debug - Total users with interests:', users.length);
+      console.log('Debug - Sample user interests:', users.slice(0, 3).map(u => ({ id: u._id, interests: u.interests })));
+
+      const matchingUsers = users.filter(user => {
+        const hasMatch = user.interests.some(interest => {
           const interestLower = interest.toLowerCase();
-          return hashtags.some(tag => tag.toLowerCase() === interestLower) ||
-                 (category && category.toLowerCase() === interestLower);
-        })
-      );
+          const categoryMatch = category && category.toLowerCase() === interestLower;
+          const hashtagMatch = hashtags.some(tag => tag.toLowerCase() === interestLower);
+          
+          if (categoryMatch || hashtagMatch) {
+            console.log(`Debug - Match found for user ${user._id}: interest="${interest}" matches category="${category}" or hashtags="${hashtags}"`);
+          }
+          
+          return categoryMatch || hashtagMatch;
+        });
+        
+        return hasMatch;
+      });
+
+      console.log('Debug - Matching users before community filter:', matchingUsers.length);
 
       let finalUsers = matchingUsers;
       if (communityId) {
         const community = await Community.findById(communityId);
         if (community) {
+          console.log('Debug - Community found:', community.name);
+          console.log('Debug - Community members count:', community.members.length);
           finalUsers = matchingUsers.filter(user => 
             community.members.includes(user._id)
           );
+          console.log('Debug - Users after community filtering:', finalUsers.length);
         }
       }
 
@@ -53,6 +73,7 @@ class NotificationService {
         );
       });
 
+      console.log('Debug - Creating notifications for users:', finalUsers.map(u => u._id));
       await Promise.all(notificationPromises);
       console.log(`Sent ${finalUsers.length} interest-based notifications for post ${post._id}`);
     } catch (error) {
