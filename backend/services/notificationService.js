@@ -8,6 +8,7 @@ class NotificationService {
       console.log('Debug - Post author:', post.author);
       console.log('Debug - Hashtags:', hashtags);
       console.log('Debug - Category:', category);
+      console.log('Debug - Post title:', post.title);
       
       const users = await User.find({ 
         interests: { $exists: true, $ne: [] },
@@ -15,21 +16,34 @@ class NotificationService {
       });
 
       console.log('Debug - Total users with interests:', users.length);
-      console.log('Debug - Sample user interests:', users.slice(0, 3).map(u => ({ id: u._id, interests: u.interests })));
+      if (users.length > 0) {
+        console.log('Debug - All user interests:');
+        users.forEach(user => {
+          console.log(`  User ${user._id}: [${user.interests.join(', ')}]`);
+        });
+      } else {
+        console.log('Debug - No users found with interests!');
+      }
 
       const matchingUsers = users.filter(user => {
+        console.log(`Debug - Checking user ${user._id} with interests: [${user.interests.join(', ')}]`);
+        
         const hasMatch = user.interests.some(interest => {
           const interestLower = interest.toLowerCase();
           const categoryMatch = category && category.toLowerCase() === interestLower;
           const hashtagMatch = hashtags.some(tag => tag.toLowerCase() === interestLower);
           
+          console.log(`  Checking interest "${interest}" (${interestLower}) against category "${category}" and hashtags [${hashtags.join(', ')}]`);
+          console.log(`  Category match: ${categoryMatch}, Hashtag match: ${hashtagMatch}`);
+          
           if (categoryMatch || hashtagMatch) {
-            console.log(`Debug - Match found for user ${user._id}: interest="${interest}" matches category="${category}" or hashtags="${hashtags}"`);
+            console.log(`Debug - MATCH FOUND for user ${user._id}: interest="${interest}" matches category="${category}" or hashtags="${hashtags}"`);
           }
           
           return categoryMatch || hashtagMatch;
         });
         
+        console.log(`Debug - User ${user._id} has match: ${hasMatch}`);
         return hasMatch;
       });
 
