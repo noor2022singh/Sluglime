@@ -1,0 +1,39 @@
+# Node modules
+node_modules/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# dotenv environment variables
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Optional: Ignore build artifacts (e.g., if using TypeScript)
+dist/
+build/
+
+# Optional: VSCode settings
+.vscode/
+
+
+# Ignore coverage reports (if using tests)
+coverage/
+
+# Ignore database files (if any local DBs like SQLite)
+*.sqlite
+*.sqlite3
+
+# Optional: PM2 process files
+pids/
+*.pid
+*.seed
+
+# Ignore uploads (if any local image storage before Cloudinary)
+uploads/
