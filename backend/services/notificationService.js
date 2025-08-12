@@ -5,60 +5,30 @@ const { createNotification } = require('../controllers/notificationController');
 class NotificationService {
   static async sendInterestBasedNotifications(post, hashtags = [], category = '', communityId = null) {
     try {
-      console.log('Debug - Post author:', post.author);
-      console.log('Debug - Hashtags:', hashtags);
-      console.log('Debug - Category:', category);
-      console.log('Debug - Post title:', post.title);
-      
       const users = await User.find({ 
         interests: { $exists: true, $ne: [] },
         _id: { $ne: post.author }
       });
 
-      console.log('Debug - Total users with interests:', users.length);
-      if (users.length > 0) {
-        console.log('Debug - All user interests:');
-        users.forEach(user => {
-          console.log(`  User ${user._id}: [${user.interests.join(', ')}]`);
-        });
-      } else {
-        console.log('Debug - No users found with interests!');
-      }
-
       const matchingUsers = users.filter(user => {
-        console.log(`Debug - Checking user ${user._id} with interests: [${user.interests.join(', ')}]`);
-        
         const hasMatch = user.interests.some(interest => {
           const interestLower = interest.toLowerCase();
           const categoryMatch = category && category.toLowerCase() === interestLower;
           const hashtagMatch = hashtags.some(tag => tag.toLowerCase() === interestLower);
           
-          console.log(`  Checking interest "${interest}" (${interestLower}) against category "${category}" and hashtags [${hashtags.join(', ')}]`);
-          console.log(`  Category match: ${categoryMatch}, Hashtag match: ${hashtagMatch}`);
-          
-          if (categoryMatch || hashtagMatch) {
-            console.log(`Debug - MATCH FOUND for user ${user._id}: interest="${interest}" matches category="${category}" or hashtags="${hashtags}"`);
-          }
-          
           return categoryMatch || hashtagMatch;
         });
         
-        console.log(`Debug - User ${user._id} has match: ${hasMatch}`);
         return hasMatch;
       });
-
-      console.log('Debug - Matching users before community filter:', matchingUsers.length);
 
       let finalUsers = matchingUsers;
       if (communityId) {
         const community = await Community.findById(communityId);
         if (community) {
-          console.log('Debug - Community found:', community.name);
-          console.log('Debug - Community members count:', community.members.length);
           finalUsers = matchingUsers.filter(user => 
             community.members.includes(user._id)
           );
-          console.log('Debug - Users after community filtering:', finalUsers.length);
         }
       }
 
@@ -87,7 +57,6 @@ class NotificationService {
         );
       });
 
-      console.log('Debug - Creating notifications for users:', finalUsers.map(u => u._id));
       await Promise.all(notificationPromises);
       console.log(`Sent ${finalUsers.length} interest-based notifications for post ${post._id}`);
     } catch (error) {

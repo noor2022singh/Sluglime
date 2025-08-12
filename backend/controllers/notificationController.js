@@ -191,7 +191,7 @@ exports.testNotification = async (req, res) => {
 
 exports.testInterestNotification = async (req, res) => {
   try {
-    const { userId, category = "technology", hashtags = ["technology", "ai"] } = req.body;
+    const { userId, category = "Tech", hashtags = ["Tech", "technology"] } = req.body;
 
     if (!userId) {
       return res.status(400).json({ error: "User ID is required" });
