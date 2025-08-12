@@ -230,4 +230,5 @@ module.exports = {
   clearAllNotifications: exports.clearAllNotifications,
   createSampleNotifications: exports.createSampleNotifications,
   testNotification: exports.testNotification,
+  testInterestNotification: exports.testInterestNotification,
 };
