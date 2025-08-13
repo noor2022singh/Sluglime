@@ -99,17 +99,27 @@ export default function CreatePostScreen() {
       formData.append("content", content);
       formData.append("category", category);
       formData.append("author", user._id.toString());
-      if (isRepost) {
-        formData.append("repostOf", params.repostOf);
-        if (originalImage) {
-          formData.append("image", originalImage);
+              if (isRepost) {
+          formData.append("repostOf", params.repostOf);
+          if (originalImage) {
+            const imageUrl = typeof originalImage === 'string' ? originalImage : originalImage.url;
+            if (imageUrl) {
+              formData.append("originalImageUrl", imageUrl);
+              if (originalImage.publicId) {
+                formData.append("originalImagePublicId", originalImage.publicId);
+              }
+            }
+          }
+          if (originalProofImages && originalProofImages.length > 0) {
+            const proofUrls = originalProofImages.map(img => {
+              if (typeof img === 'string') return img;
+              return img.url || img;
+            }).filter(Boolean);
+            if (proofUrls.length > 0) {
+              formData.append("originalProofImageUrls", JSON.stringify(proofUrls));
+            }
+          }
         }
-        if (originalProofImages && originalProofImages.length > 0) {
-          originalProofImages.forEach((img, idx) => {
-            formData.append("proofImages", img);
-          });
-        }
-      }
       if (isCommunityPost) {
         formData.append("community", params.community);
         formData.append("visibility", "community");
@@ -245,12 +255,15 @@ export default function CreatePostScreen() {
               {originalContent}
             </Text>
             
-            {originalImage && (
+            {originalImage && (originalImage.url || typeof originalImage === 'string') && (
               <View style={styles.originalImageContainer}>
                 <Text style={[styles.originalImageLabel, { color: Colors.dark.textSecondary }]}>
                   Original image (will be included):
                 </Text>
-                <Image source={{ uri: originalImage.uri || originalImage }} style={styles.originalImage} />
+                <Image 
+                  source={{ uri: typeof originalImage === 'string' ? originalImage : originalImage.url }} 
+                  style={styles.originalImage} 
+                />
               </View>
             )}
             
@@ -263,7 +276,7 @@ export default function CreatePostScreen() {
                   {originalProofImages.map((img, idx) => (
                     <Image 
                       key={idx} 
-                      source={{ uri: img.uri || img }} 
+                      source={{ uri: typeof img === 'string' ? img : (img.url || img) }} 
                       style={styles.originalProofImage} 
                     />
                   ))}

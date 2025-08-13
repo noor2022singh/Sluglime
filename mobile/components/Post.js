@@ -366,14 +366,39 @@ export default function Post({
 
   const handleRepost = () => {
     if (!user) return;
+    
+    let imageData = null;
+    if (image) {
+      if (typeof image === 'string') {
+        imageData = { url: image, publicId: null };
+      } else if (image.url) {
+        imageData = { url: image.url, publicId: image.publicId };
+      } else {
+        imageData = image;
+      }
+    }
+    
+    let proofImagesData = [];
+    if (proofImages && Array.isArray(proofImages)) {
+      proofImagesData = proofImages.map(img => {
+        if (typeof img === 'string') {
+          return { url: img, publicId: null };
+        } else if (img.url) {
+          return { url: img.url, publicId: img.publicId };
+        } else {
+          return img;
+        }
+      });
+    }
+    
     router.push({
       pathname: "/create-post",
       params: {
         repostOf: _id,
         originalContent: content,
         originalAuthor: author?.name || author?.username || "Unknown",
-        originalImage: image,
-        originalProofImages: proofImages || [],
+        originalImage: imageData,
+        originalProofImages: proofImagesData,
       },
     });
   };

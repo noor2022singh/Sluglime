@@ -209,6 +209,25 @@ exports.createPost = async (req, res) => {
       }));
     }
 
+    if (repostOf && req.body.originalImageUrl) {
+      image = {
+        url: req.body.originalImageUrl,
+        publicId: req.body.originalImagePublicId || null,
+      };
+    }
+
+    if (repostOf && req.body.originalProofImageUrls) {
+      try {
+        const proofUrls = JSON.parse(req.body.originalProofImageUrls);
+        proofImages = proofUrls.map(url => ({
+          url: url,
+          publicId: null,
+        }));
+      } catch (e) {
+        proofImages = [];
+      }
+    }
+
     const hashtagRegex = /#(\w+)/g;
     let contentHashtags = [];
     let match;
