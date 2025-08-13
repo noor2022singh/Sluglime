@@ -367,12 +367,16 @@ export default function Post({
   const handleRepost = () => {
     if (!user) return;
     
+    const { API_BASE_URL } = require('../config/server');
+    
     let imageData = null;
     if (image) {
       if (typeof image === 'string') {
-        imageData = { url: image, publicId: null };
+        const imageUrl = image.startsWith('http') ? image : `${API_BASE_URL}/uploads/${image}`;
+        imageData = { url: imageUrl, publicId: null };
       } else if (image.url) {
-        imageData = { url: image.url, publicId: image.publicId };
+        const imageUrl = image.url.startsWith('http') ? image.url : `${API_BASE_URL}/uploads/${image.url}`;
+        imageData = { url: imageUrl, publicId: image.publicId };
       } else {
         imageData = image;
       }
@@ -382,14 +386,27 @@ export default function Post({
     if (proofImages && Array.isArray(proofImages)) {
       proofImagesData = proofImages.map(img => {
         if (typeof img === 'string') {
-          return { url: img, publicId: null };
+          const imgUrl = img.startsWith('http') ? img : `${API_BASE_URL}/uploads/${img}`;
+          return { url: imgUrl, publicId: null };
         } else if (img.url) {
-          return { url: img.url, publicId: img.publicId };
+          const imgUrl = img.url.startsWith('http') ? img.url : `${API_BASE_URL}/uploads/${img.url}`;
+          return { url: imgUrl, publicId: img.publicId };
         } else {
           return img;
         }
       });
     }
+    
+    console.log('Sending repost params:', {
+      repostOf: _id,
+      originalContent: content,
+      originalAuthor: author?.name || author?.username || "Unknown",
+      originalImage: imageData,
+      originalProofImages: proofImagesData,
+    });
+
+    const imageDataString = imageData ? JSON.stringify(imageData) : '';
+    const proofImagesDataString = proofImagesData.length > 0 ? JSON.stringify(proofImagesData) : '';
     
     router.push({
       pathname: "/create-post",
@@ -397,8 +414,8 @@ export default function Post({
         repostOf: _id,
         originalContent: content,
         originalAuthor: author?.name || author?.username || "Unknown",
-        originalImage: imageData,
-        originalProofImages: proofImagesData,
+        originalImage: imageDataString,
+        originalProofImages: proofImagesDataString,
       },
     });
   };

@@ -29,8 +29,22 @@ export default function CreatePostScreen() {
   const isCommunityPost = !!params.community;
   const [originalContent] = useState(params.originalContent || "");
   const [originalAuthor] = useState(params.originalAuthor || "");
-  const [originalImage] = useState(params.originalImage || null);
-  const [originalProofImages] = useState(params.originalProofImages || []);
+  const [originalImage] = useState(() => {
+    try {
+      return params.originalImage ? JSON.parse(params.originalImage) : null;
+    } catch (e) {
+      console.log('Error parsing originalImage:', e);
+      return null;
+    }
+  });
+  const [originalProofImages] = useState(() => {
+    try {
+      return params.originalProofImages ? JSON.parse(params.originalProofImages) : [];
+    } catch (e) {
+      console.log('Error parsing originalProofImages:', e);
+      return [];
+    }
+  });
   const [title, setTitle] = useState("");
   const [content, setContent] = useState(
     isRepost ? `Re: ${originalContent}` : ""
@@ -43,6 +57,7 @@ export default function CreatePostScreen() {
   const [categoryOptions, setCategoryOptions] = useState([]);
   const [availableHashtags, setAvailableHashtags] = useState([]);
   const [selectedHashtags, setSelectedHashtags] = useState([]);
+  const [expanded, setExpanded] = useState(false);
   
   useEffect(() => {
     if (isCommunityPost && params.community) {
@@ -63,7 +78,21 @@ export default function CreatePostScreen() {
         setAvailableHashtags(data.hashtags || []);
       })
       .catch(() => setAvailableHashtags([]));
-  }, [isCommunityPost, params.community]);
+  }, [isCommunityPost, params.community, isRepost, params.repostOf, params.originalContent, params.originalAuthor, params.originalImage, params.originalProofImages]);
+
+  useEffect(() => {
+    if (isRepost) {
+      console.log('Repost params received:', {
+        repostOf: params.repostOf,
+        originalContent: params.originalContent,
+        originalAuthor: params.originalAuthor,
+        originalImage: params.originalImage,
+        originalProofImages: params.originalProofImages
+      });
+      console.log('Parsed image data:', originalImage);
+      console.log('Parsed proof images data:', originalProofImages);
+    }
+  }, [isRepost, params.repostOf, params.originalContent, params.originalAuthor, params.originalImage, params.originalProofImages, originalImage, originalProofImages]);
 
   const pickImage = async () => {
     if (isRepost) {
@@ -246,23 +275,58 @@ export default function CreatePostScreen() {
             <Text style={[styles.repostLabel, { color: Colors.dark.tint }]}>
               Reposting from {originalAuthor}
             </Text>
-            <Text
-              style={[
-                styles.repostContent,
-                { color: Colors.dark.textSecondary },
-              ]}
-            >
-              {originalContent}
+            
+            <View style={styles.contentContainer}>
+              <Text
+                style={[
+                  styles.repostContent,
+                  { color: Colors.dark.textSecondary },
+                ]}
+                numberOfLines={expanded ? undefined : 3}
+              >
+                {originalContent || 'No content'}
+              </Text>
+              {originalContent && originalContent.length > 100 && (
+                <TouchableOpacity
+                  onPress={() => setExpanded(!expanded)}
+                  style={styles.showMoreButton}
+                >
+                  <Text style={[styles.showMoreText, { color: Colors.dark.tint }]}>
+                    {expanded ? 'Show less' : 'Show more'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            
+            <Text style={[styles.debugText, { color: Colors.dark.textSecondary, fontSize: 10 }]}>
+              Debug - originalImage: {JSON.stringify(originalImage)}
+            </Text>
+            <Text style={[styles.debugText, { color: Colors.dark.textSecondary, fontSize: 10 }]}>
+              Debug - originalProofImages: {JSON.stringify(originalProofImages)}
+            </Text>
+            <Text style={[styles.debugText, { color: Colors.dark.textSecondary, fontSize: 10 }]}>
+              Image URL: {originalImage?.url || 'No URL'}
+            </Text>
+            <Text style={[styles.debugText, { color: Colors.dark.textSecondary, fontSize: 10 }]}>
+              Content length: {originalContent ? originalContent.length : 'No content'}
             </Text>
             
-            {originalImage && (originalImage.url || typeof originalImage === 'string') && (
+            {originalImage && (
               <View style={styles.originalImageContainer}>
                 <Text style={[styles.originalImageLabel, { color: Colors.dark.textSecondary }]}>
                   Original image (will be included):
                 </Text>
+                <Text style={[styles.debugText, { color: Colors.dark.textSecondary, fontSize: 10 }]}>
+                  Image URI: {typeof originalImage === 'string' ? originalImage : (originalImage.url || originalImage)}
+                </Text>
                 <Image 
-                  source={{ uri: typeof originalImage === 'string' ? originalImage : originalImage.url }} 
+                  source={{ uri: typeof originalImage === 'string' ? originalImage : (originalImage.url || originalImage) }} 
                   style={styles.originalImage} 
+                  onError={(error) => {
+                    console.log('Image loading error:', error);
+                    console.log('Failed image URI:', typeof originalImage === 'string' ? originalImage : (originalImage.url || originalImage));
+                  }}
+                  onLoad={() => console.log('Image loaded successfully')}
                 />
               </View>
             )}
@@ -278,6 +342,8 @@ export default function CreatePostScreen() {
                       key={idx} 
                       source={{ uri: typeof img === 'string' ? img : (img.url || img) }} 
                       style={styles.originalProofImage} 
+                      onError={(error) => console.log('Proof image loading error:', error)}
+                      onLoad={() => console.log('Proof image loaded successfully')}
                     />
                   ))}
                 </View>
@@ -748,5 +814,25 @@ const styles = StyleSheet.create({
   hashtagText: {
     fontSize: 16,
     fontWeight: '500',
+  },
+  debugText: {
+    fontSize: 10,
+    fontFamily: 'monospace',
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  contentContainer: {
+    marginBottom: 12,
+  },
+  showMoreButton: {
+    marginTop: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    alignSelf: 'flex-start',
+  },
+  showMoreText: {
+    fontSize: 14,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });
