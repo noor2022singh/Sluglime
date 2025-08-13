@@ -66,7 +66,6 @@ export default function CreatePostScreen() {
   }, [isCommunityPost, params.community]);
 
   const pickImage = async () => {
-    // Don't allow image picking for reposts
     if (isRepost) {
       Alert.alert("Info", "Reposts automatically include the original post's images.");
       return;
@@ -84,20 +83,24 @@ export default function CreatePostScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!title || !content) {
-      Alert.alert("Error", "Please fill in all fields.");
+    if (!content.trim()) {
+      Alert.alert("Error", "Please add your comment/content.");
+      return;
+    }
+    if (!title.trim() && !isRepost) {
+      Alert.alert("Error", "Please add a title.");
       return;
     }
     setLoading(true);
     try {
       let formData = new FormData();
-      formData.append("title", title);
+      const finalTitle = isRepost && !title ? `Repost: ${originalContent.substring(0, 50)}${originalContent.length > 50 ? '...' : ''}` : title;
+      formData.append("title", finalTitle);
       formData.append("content", content);
       formData.append("category", category);
       formData.append("author", user._id.toString());
       if (isRepost) {
         formData.append("repostOf", params.repostOf);
-        // For reposts, include original images automatically
         if (originalImage) {
           formData.append("image", originalImage);
         }
@@ -190,23 +193,21 @@ export default function CreatePostScreen() {
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustContentInsets={false}
       >
-        {!isRepost && (
-          <TextInput
-            style={[
-              styles.titleInput,
-              {
-                backgroundColor: Colors.dark.card,
-                color: Colors.dark.text,
-                borderColor: Colors.dark.divider,
-              },
-            ]}
-            placeholder="Title (optional)"
-            placeholderTextColor={Colors.dark.textSecondary}
-            value={title}
-            onChangeText={setTitle}
-            multiline
-          />
-        )}
+        <TextInput
+          style={[
+            styles.titleInput,
+            {
+              backgroundColor: Colors.dark.card,
+              color: Colors.dark.text,
+              borderColor: Colors.dark.divider,
+            },
+          ]}
+          placeholder={isRepost ? "Add your repost title (optional)" : "Title (optional)"}
+          placeholderTextColor={Colors.dark.textSecondary}
+          value={title}
+          onChangeText={setTitle}
+          multiline
+        />
 
         <TextInput
           style={[
@@ -244,7 +245,6 @@ export default function CreatePostScreen() {
               {originalContent}
             </Text>
             
-            {/* Show original images that will be included in repost */}
             {originalImage && (
               <View style={styles.originalImageContainer}>
                 <Text style={[styles.originalImageLabel, { color: Colors.dark.textSecondary }]}>
