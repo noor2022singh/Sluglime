@@ -407,7 +407,7 @@ export default function Post({
       params: {
         repostOf: _id,
         originalContent: content,
-        originalAuthor: author?.name || author?.username || "Unknown",
+        originalAuthor: anonymous ? "Anonymous" : (author?.name || author?.username || "Unknown"),
         originalImage: imageDataString,
         originalProofImages: proofImagesDataString,
       },

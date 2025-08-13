@@ -47,8 +47,14 @@ export default function CreatePostScreen() {
   });
   const [title, setTitle] = useState("");
   const [content, setContent] = useState(
-    isRepost ? `Re: ${originalContent}` : ""
+    isRepost ? `Re: ${originalContent || ''}` : ""
   );
+  
+  useEffect(() => {
+    if (isRepost && originalContent) {
+      setContent(`Re: ${originalContent}`);
+    }
+  }, [isRepost, originalContent]);
   const [category, setCategory] = useState("news");
   const [loading, setLoading] = useState(false);
   const [image, setImage] = useState(null);
@@ -261,7 +267,7 @@ export default function CreatePostScreen() {
             ]}
           >
             <Text style={[styles.repostLabel, { color: Colors.dark.tint }]}>
-              Reposting from {originalAuthor}
+              Reposting from {originalAuthor || 'Unknown'}
             </Text>
             
             <View style={styles.contentContainer}>
@@ -286,26 +292,12 @@ export default function CreatePostScreen() {
               )}
             </View>
             
-            <Text style={[styles.debugText, { color: Colors.dark.textSecondary, fontSize: 10 }]}>
-              Debug - originalImage: {JSON.stringify(originalImage)}
-            </Text>
-            <Text style={[styles.debugText, { color: Colors.dark.textSecondary, fontSize: 10 }]}>
-              Debug - originalProofImages: {JSON.stringify(originalProofImages)}
-            </Text>
-            <Text style={[styles.debugText, { color: Colors.dark.textSecondary, fontSize: 10 }]}>
-              Image URL: {originalImage?.url || 'No URL'}
-            </Text>
-            <Text style={[styles.debugText, { color: Colors.dark.textSecondary, fontSize: 10 }]}>
-              Content length: {originalContent ? originalContent.length : 'No content'}
-            </Text>
+
             
             {originalImage && (
               <View style={styles.originalImageContainer}>
                 <Text style={[styles.originalImageLabel, { color: Colors.dark.textSecondary }]}>
                   Original image (will be included):
-                </Text>
-                <Text style={[styles.debugText, { color: Colors.dark.textSecondary, fontSize: 10 }]}>
-                  Image URI: {typeof originalImage === 'string' ? originalImage : (originalImage.url || originalImage)}
                 </Text>
                 <Image 
                   source={{ uri: typeof originalImage === 'string' ? originalImage : (originalImage.url || originalImage) }} 
@@ -796,12 +788,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
-  debugText: {
-    fontSize: 10,
-    fontFamily: 'monospace',
-    marginTop: 4,
-    marginBottom: 4,
-  },
+
   contentContainer: {
     marginBottom: 12,
   },
