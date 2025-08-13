@@ -80,19 +80,7 @@ export default function CreatePostScreen() {
       .catch(() => setAvailableHashtags([]));
   }, [isCommunityPost, params.community, isRepost, params.repostOf, params.originalContent, params.originalAuthor, params.originalImage, params.originalProofImages]);
 
-  useEffect(() => {
-    if (isRepost) {
-      console.log('Repost params received:', {
-        repostOf: params.repostOf,
-        originalContent: params.originalContent,
-        originalAuthor: params.originalAuthor,
-        originalImage: params.originalImage,
-        originalProofImages: params.originalProofImages
-      });
-      console.log('Parsed image data:', originalImage);
-      console.log('Parsed proof images data:', originalProofImages);
-    }
-  }, [isRepost, params.repostOf, params.originalContent, params.originalAuthor, params.originalImage, params.originalProofImages, originalImage, originalProofImages]);
+
 
   const pickImage = async () => {
     if (isRepost) {
@@ -322,11 +310,6 @@ export default function CreatePostScreen() {
                 <Image 
                   source={{ uri: typeof originalImage === 'string' ? originalImage : (originalImage.url || originalImage) }} 
                   style={styles.originalImage} 
-                  onError={(error) => {
-                    console.log('Image loading error:', error);
-                    console.log('Failed image URI:', typeof originalImage === 'string' ? originalImage : (originalImage.url || originalImage));
-                  }}
-                  onLoad={() => console.log('Image loaded successfully')}
                 />
               </View>
             )}
@@ -342,8 +325,6 @@ export default function CreatePostScreen() {
                       key={idx} 
                       source={{ uri: typeof img === 'string' ? img : (img.url || img) }} 
                       style={styles.originalProofImage} 
-                      onError={(error) => console.log('Proof image loading error:', error)}
-                      onLoad={() => console.log('Proof image loaded successfully')}
                     />
                   ))}
                 </View>

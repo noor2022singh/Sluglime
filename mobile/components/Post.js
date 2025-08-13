@@ -397,13 +397,7 @@ export default function Post({
       });
     }
     
-    console.log('Sending repost params:', {
-      repostOf: _id,
-      originalContent: content,
-      originalAuthor: author?.name || author?.username || "Unknown",
-      originalImage: imageData,
-      originalProofImages: proofImagesData,
-    });
+
 
     const imageDataString = imageData ? JSON.stringify(imageData) : '';
     const proofImagesDataString = proofImagesData.length > 0 ? JSON.stringify(proofImagesData) : '';

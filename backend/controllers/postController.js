@@ -300,6 +300,29 @@ exports.createPost = async (req, res) => {
       postData.isCommunityPost = true;
       postData.visibility = "community";
     }
+    
+    if (repostOf) {
+      const originalPost = await Post.findById(repostOf);
+      if (originalPost && originalPost.isCommunityPost) {
+        postData.community = originalPost.community;
+        postData.isCommunityPost = true;
+        postData.visibility = "community";
+        
+        if (originalPost.community) {
+          const Community = require("../models/Community");
+          const communityDoc = await Community.findById(originalPost.community);
+          if (!communityDoc) {
+            return res.status(400).json({ error: "Community not found." });
+          }
+          
+          if (!communityDoc.members.includes(author)) {
+            return res.status(403).json({ 
+              error: "You must be a member of this community to repost its content." 
+            });
+          }
+        }
+      }
+    }
 
     if (!content || !category || (anonymous !== true && !author)) {
       return res
@@ -639,6 +662,8 @@ exports.getFollowingFeed = async (req, res) => {
     if (req.query.category) {
       filter.category = req.query.category;
     }
+    
+    filter.isCommunityPost = { $ne: true };
 
     const posts = await Post.find(filter)
       .populate("author", "username name avatar")
@@ -678,6 +703,8 @@ exports.getHotrisingFeed = async (req, res) => {
     if (req.query.category && req.query.category !== 'all') {
       filter.category = req.query.category;
     }
+    
+    filter.isCommunityPost = { $ne: true };
 
     const posts = await Post.find(filter)
       .populate("author", "username name avatar followers")
