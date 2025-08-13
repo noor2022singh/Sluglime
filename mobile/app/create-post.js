@@ -29,6 +29,8 @@ export default function CreatePostScreen() {
   const isCommunityPost = !!params.community;
   const [originalContent] = useState(params.originalContent || "");
   const [originalAuthor] = useState(params.originalAuthor || "");
+  const [originalImage] = useState(params.originalImage || null);
+  const [originalProofImages] = useState(params.originalProofImages || []);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState(
     isRepost ? `Re: ${originalContent}` : ""
@@ -41,6 +43,7 @@ export default function CreatePostScreen() {
   const [categoryOptions, setCategoryOptions] = useState([]);
   const [availableHashtags, setAvailableHashtags] = useState([]);
   const [selectedHashtags, setSelectedHashtags] = useState([]);
+  
   useEffect(() => {
     if (isCommunityPost && params.community) {
       fetch(`${API_BASE_URL}/communities/${params.community}/categories`)
@@ -63,6 +66,12 @@ export default function CreatePostScreen() {
   }, [isCommunityPost, params.community]);
 
   const pickImage = async () => {
+    // Don't allow image picking for reposts
+    if (isRepost) {
+      Alert.alert("Info", "Reposts automatically include the original post's images.");
+      return;
+    }
+    
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -88,6 +97,15 @@ export default function CreatePostScreen() {
       formData.append("author", user._id.toString());
       if (isRepost) {
         formData.append("repostOf", params.repostOf);
+        // For reposts, include original images automatically
+        if (originalImage) {
+          formData.append("image", originalImage);
+        }
+        if (originalProofImages && originalProofImages.length > 0) {
+          originalProofImages.forEach((img, idx) => {
+            formData.append("proofImages", img);
+          });
+        }
       }
       if (isCommunityPost) {
         formData.append("community", params.community);
@@ -96,7 +114,7 @@ export default function CreatePostScreen() {
       if (selectedHashtags.length > 0) {
         formData.append("selectedHashtags", selectedHashtags.join(','));
       }
-      if (image) {
+      if (image && !isRepost) {
         formData.append("image", {
           uri: image.uri,
           name: "photo.jpg",
@@ -143,7 +161,7 @@ export default function CreatePostScreen() {
         </TouchableOpacity>
 
         <Text style={[styles.headerTitle, { color: Colors.dark.text }]}>
-          {isCommunityPost ? "Create Community Post" : "Create Post"}
+          {isRepost ? "Repost" : isCommunityPost ? "Create Community Post" : "Create Post"}
         </Text>
 
         <TouchableOpacity
@@ -172,21 +190,23 @@ export default function CreatePostScreen() {
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustContentInsets={false}
       >
-        <TextInput
-          style={[
-            styles.titleInput,
-            {
-              backgroundColor: Colors.dark.card,
-              color: Colors.dark.text,
-              borderColor: Colors.dark.divider,
-            },
-          ]}
-          placeholder="Title (optional)"
-          placeholderTextColor={Colors.dark.textSecondary}
-          value={title}
-          onChangeText={setTitle}
-          multiline
-        />
+        {!isRepost && (
+          <TextInput
+            style={[
+              styles.titleInput,
+              {
+                backgroundColor: Colors.dark.card,
+                color: Colors.dark.text,
+                borderColor: Colors.dark.divider,
+              },
+            ]}
+            placeholder="Title (optional)"
+            placeholderTextColor={Colors.dark.textSecondary}
+            value={title}
+            onChangeText={setTitle}
+            multiline
+          />
+        )}
 
         <TextInput
           style={[
@@ -197,7 +217,7 @@ export default function CreatePostScreen() {
               borderColor: Colors.dark.divider,
             },
           ]}
-          placeholder="What's happening?"
+          placeholder={isRepost ? "Add your repost comment..." : "What's happening?"}
           placeholderTextColor={Colors.dark.textSecondary}
           value={content}
           onChangeText={setContent}
@@ -223,10 +243,37 @@ export default function CreatePostScreen() {
             >
               {originalContent}
             </Text>
+            
+            {/* Show original images that will be included in repost */}
+            {originalImage && (
+              <View style={styles.originalImageContainer}>
+                <Text style={[styles.originalImageLabel, { color: Colors.dark.textSecondary }]}>
+                  Original image (will be included):
+                </Text>
+                <Image source={{ uri: originalImage.uri || originalImage }} style={styles.originalImage} />
+              </View>
+            )}
+            
+            {originalProofImages && originalProofImages.length > 0 && (
+              <View style={styles.originalProofContainer}>
+                <Text style={[styles.originalImageLabel, { color: Colors.dark.textSecondary }]}>
+                  Original proof images (will be included):
+                </Text>
+                <View style={styles.originalProofImages}>
+                  {originalProofImages.map((img, idx) => (
+                    <Image 
+                      key={idx} 
+                      source={{ uri: img.uri || img }} 
+                      style={styles.originalProofImage} 
+                    />
+                  ))}
+                </View>
+              </View>
+            )}
           </View>
         )}
 
-        {image && (
+        {image && !isRepost && (
           <View
             style={[
               styles.imageContainer,
@@ -263,25 +310,27 @@ export default function CreatePostScreen() {
         >
           <MaterialIcons name="image" size={24} color={Colors.dark.icon} />
           <Text style={[styles.actionText, { color: Colors.dark.text }]}>
-            Add Image
+            {isRepost ? "Original Images" : "Add Image"}
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[
-            styles.actionButton,
-            {
-              backgroundColor: Colors.dark.card,
-              borderColor: Colors.dark.divider,
-            },
-          ]}
-          onPress={() => setShowCategoryModal(true)}
-        >
-          <MaterialIcons name="category" size={24} color={Colors.dark.icon} />
-          <Text style={[styles.actionText, { color: Colors.dark.text }]}>
-            {category || "Select Category"}
-          </Text>
-        </TouchableOpacity>
+        {!isRepost && (
+          <TouchableOpacity
+            style={[
+              styles.actionButton,
+              {
+                backgroundColor: Colors.dark.card,
+                borderColor: Colors.dark.divider,
+              },
+            ]}
+            onPress={() => setShowCategoryModal(true)}
+          >
+            <MaterialIcons name="category" size={24} color={Colors.dark.icon} />
+            <Text style={[styles.actionText, { color: Colors.dark.text }]}>
+              {category || "Select Category"}
+            </Text>
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity
           style={[
@@ -300,66 +349,68 @@ export default function CreatePostScreen() {
         </TouchableOpacity>
       </View>
 
-      <Modal
-        visible={showCategoryModal}
-        animationType="slide"
-        transparent={true}
-      >
-        <View
-          style={[styles.modalOverlay, { backgroundColor: "rgba(0,0,0,0.5)" }]}
+      {!isRepost && (
+        <Modal
+          visible={showCategoryModal}
+          animationType="slide"
+          transparent={true}
         >
           <View
-            style={[styles.modalContent, { backgroundColor: Colors.dark.card }]}
+            style={[styles.modalOverlay, { backgroundColor: "rgba(0,0,0,0.5)" }]}
           >
-            <Text style={[styles.modalTitle, { color: Colors.dark.text }]}>
-              Select Category
-            </Text>
+            <View
+              style={[styles.modalContent, { backgroundColor: Colors.dark.card }]}
+            >
+              <Text style={[styles.modalTitle, { color: Colors.dark.text }]}>
+                Select Category
+              </Text>
 
-            {categoryOptions.map((cat) => (
+              {categoryOptions.map((cat) => (
+                <TouchableOpacity
+                  key={cat}
+                  style={[
+                    styles.categoryOption,
+                    {
+                      backgroundColor:
+                        category === cat
+                          ? Colors.dark.tint
+                          : Colors.dark.background,
+                      borderColor: Colors.dark.divider,
+                    },
+                  ]}
+                  onPress={() => {
+                    setCategory(cat);
+                    setShowCategoryModal(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.categoryText,
+                      { color: category === cat ? "#fff" : Colors.dark.text },
+                    ]}
+                  >
+                    {cat}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+
               <TouchableOpacity
-                key={cat}
                 style={[
-                  styles.categoryOption,
-                  {
-                    backgroundColor:
-                      category === cat
-                        ? Colors.dark.tint
-                        : Colors.dark.background,
-                    borderColor: Colors.dark.divider,
-                  },
+                  styles.cancelButton,
+                  { backgroundColor: Colors.dark.divider },
                 ]}
-                onPress={() => {
-                  setCategory(cat);
-                  setShowCategoryModal(false);
-                }}
+                onPress={() => setShowCategoryModal(false)}
               >
                 <Text
-                  style={[
-                    styles.categoryText,
-                    { color: category === cat ? "#fff" : Colors.dark.text },
-                  ]}
+                  style={[styles.cancelButtonText, { color: Colors.dark.text }]}
                 >
-                  {cat}
+                  Cancel
                 </Text>
               </TouchableOpacity>
-            ))}
-
-            <TouchableOpacity
-              style={[
-                styles.cancelButton,
-                { backgroundColor: Colors.dark.divider },
-              ]}
-              onPress={() => setShowCategoryModal(false)}
-            >
-              <Text
-                style={[styles.cancelButtonText, { color: Colors.dark.text }]}
-              >
-                Cancel
-              </Text>
-            </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      )}
 
       <Modal
         visible={showHashtagModal}
@@ -518,6 +569,41 @@ const styles = StyleSheet.create({
   repostContent: {
     fontSize: 14,
     color: Colors.dark.textSecondary,
+    marginBottom: 12,
+  },
+  originalImageContainer: {
+    marginTop: 12,
+    padding: 8,
+    backgroundColor: Colors.dark.background,
+    borderRadius: 6,
+  },
+  originalImageLabel: {
+    fontSize: 12,
+    marginBottom: 8,
+    fontStyle: 'italic',
+  },
+  originalImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 6,
+    resizeMode: 'cover',
+  },
+  originalProofContainer: {
+    marginTop: 12,
+    padding: 8,
+    backgroundColor: Colors.dark.background,
+    borderRadius: 6,
+  },
+  originalProofImages: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  originalProofImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 4,
+    resizeMode: 'cover',
   },
   imageContainer: {
     backgroundColor: Colors.dark.card,

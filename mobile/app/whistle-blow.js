@@ -22,24 +22,12 @@ export default function WhistleBlow() {
     const [anonId] = useState(generateAnonymousId());
     const [mainImage, setMainImage] = useState(null);
     const [proofImages, setProofImages] = useState([]);
-    const [category, setCategory] = useState(''); 
-    const [categoryOptions, setCategoryOptions] = useState([]); 
-    const [showCategoryModal, setShowCategoryModal] = useState(false); 
     const [showHashtagModal, setShowHashtagModal] = useState(false);
     const [availableHashtags, setAvailableHashtags] = useState([]);
     const [selectedHashtags, setSelectedHashtags] = useState([]);
+    
     useEffect(() => {
         if (isCommunityPost && params.community) {
-            fetch(`${API_BASE_URL}/communities/${params.community}/categories`)
-                .then(res => res.json())
-                .then(data => {
-                    setCategoryOptions(data.map(cat => cat.name));
-                    if (data.length > 0) setCategory(data[0].name);
-                })
-                .catch(() => setCategoryOptions([]));
-        } else {
-            setCategoryOptions(['news', 'culture']);
-            setCategory('news');
         }
 
         fetch(`${API_BASE_URL}/posts/hashtags`)
@@ -69,16 +57,12 @@ export default function WhistleBlow() {
             Alert.alert('Error', 'Content is required.');
             return;
         }
-        if (!category) {
-            Alert.alert('Error', 'Please select a category.');
-            return;
-        }
         setLoading(true);
         try {
             const formData = new FormData();
             formData.append('title', title);
             formData.append('content', content);
-            formData.append('category', category);
+            formData.append('category', 'news'); 
             formData.append('anonymous', 'true');
             formData.append('anonymousId', anonId);
             if (user?._id) {
@@ -130,8 +114,6 @@ export default function WhistleBlow() {
     const removeProofImage = (index) => {
         setProofImages(prev => prev.filter((_, i) => i !== index));
     };
-
-
 
     return (
         <SafeAreaView style={styles.container}>
@@ -215,37 +197,11 @@ export default function WhistleBlow() {
                     <MaterialIcons name="attach-file" size={24} color={Colors.dark.icon} />
                     <Text style={[styles.actionText, { color: Colors.dark.text }]}>Add Proof</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.actionButton, { backgroundColor: Colors.dark.card, borderColor: Colors.dark.divider }]} onPress={() => setShowCategoryModal(true)}>
-                    <MaterialIcons name="category" size={24} color={Colors.dark.icon} />
-                    <Text style={[styles.actionText, { color: Colors.dark.text }]}>{category || 'Select Category'}</Text>
-                </TouchableOpacity>
                 <TouchableOpacity style={[styles.actionButton, { backgroundColor: Colors.dark.card, borderColor: Colors.dark.divider }]} onPress={() => setShowHashtagModal(true)}>
                     <MaterialIcons name="tag" size={24} color={Colors.dark.icon} />
                     <Text style={[styles.actionText, { color: Colors.dark.text }]}>{selectedHashtags.length > 0 ? `${selectedHashtags.length} tags` : 'Add Hashtags'}</Text>
                 </TouchableOpacity>
             </View>
-            <Modal visible={showCategoryModal} animationType="slide" transparent={true}>
-                <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
-                    <View style={[styles.modalContent, { backgroundColor: Colors.dark.card }]}>
-                        <Text style={[styles.modalTitle, { color: Colors.dark.text }]}>Select Category</Text>
-                        {categoryOptions.map((cat) => (
-                            <TouchableOpacity
-                                key={cat}
-                                style={[styles.categoryOption, { backgroundColor: category === cat ? Colors.dark.tint : Colors.dark.background, borderColor: Colors.dark.divider }]}
-                                onPress={() => {
-                                    setCategory(cat);
-                                    setShowCategoryModal(false);
-                                }}
-                            >
-                                <Text style={[styles.categoryText, { color: category === cat ? '#fff' : Colors.dark.text }]}>{cat}</Text>
-                            </TouchableOpacity>
-                        ))}
-                        <TouchableOpacity style={[styles.cancelButton, { backgroundColor: Colors.dark.divider }]} onPress={() => setShowCategoryModal(false)}>
-                            <Text style={[styles.cancelButtonText, { color: Colors.dark.text }]}>Cancel</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
 
             <Modal visible={showHashtagModal} animationType="slide" transparent={true}>
                 <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>

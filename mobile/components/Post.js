@@ -372,6 +372,8 @@ export default function Post({
         repostOf: _id,
         originalContent: content,
         originalAuthor: author?.name || author?.username || "Unknown",
+        originalImage: image,
+        originalProofImages: proofImages || [],
       },
     });
   };
