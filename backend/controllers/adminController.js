@@ -147,7 +147,38 @@ exports.reviewWhistle = async (req, res) => {
         isCommunityPost: submission.isCommunityPost,
       });
       await post.save();
-      
+      try {
+        const User = require('../models/User');
+        const Community = require('../models/Community');
+        const isCommunity = !!post.community;
+        let candidateUsers = await User.find({ interests: { $exists: true, $ne: [] } }).select('interests _id');
+        if (isCommunity) {
+          const communityDoc = await Community.findById(post.community).select('members');
+          const memberIdSet = new Set((communityDoc?.members || []).map(id => id.toString()));
+          candidateUsers = candidateUsers.filter(u => memberIdSet.has(u._id.toString()));
+        }
+        const lowerHashtags = (post.hashtags || []).map(h => h.toLowerCase());
+        const lowerCategory = post.category ? post.category.toLowerCase() : null;
+        const recipients = candidateUsers.filter(u => {
+          const interestsLower = (u.interests || []).map(i => i.toLowerCase());
+          const hasTagMatch = lowerHashtags.some(t => interestsLower.includes(t));
+          const hasCategoryMatch = lowerCategory ? interestsLower.includes(lowerCategory) : false;
+          return hasTagMatch || hasCategoryMatch;
+        });
+        const displayName = 'Anonymous';
+        const titleForMsg = post.title || (post.content ? post.content.slice(0, 60) : 'New whistle');
+        for (const recipient of recipients) {
+          await createNotification(
+            recipient._id,
+            'interest_match',
+            `${displayName} posted: ${titleForMsg}`,
+            null,
+            post._id,
+            null,
+            { isCommunityPost: !!post.isCommunityPost }
+          );
+        }
+      } catch (e) {}
       if (submission.submittedBy) {
         await createNotification(
           submission.submittedBy,
@@ -159,15 +190,6 @@ exports.reviewWhistle = async (req, res) => {
           { submissionId: submission._id }
         );
       }
-      
-      const NotificationService = require('../services/notificationService');
-      await NotificationService.sendInterestBasedNotifications(
-        post, 
-        submission.hashtags, 
-        submission.category, 
-        submission.community
-      );
-      
       await submission.deleteOne();
       return res.json({ success: true, approved: true, postId: post._id });
     } else if (action === 'reject') {

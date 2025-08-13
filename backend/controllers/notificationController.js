@@ -15,20 +15,10 @@ async function createNotification(
   metadata = null
 ) {
   try {
-    let link = null;
-    if (postId) {
-      link = `/posts/${postId}`;
-    } else if (metadata?.communityId) {
-      link = `/community/${metadata.communityId}`;
-    } else if (metadata?.submissionId) {
-      link = '/whistle-approvals';
-    }
-
     const notification = new Notification({
       user: userId,
       type: type,
       message: message,
-      link: link,
       fromUser: fromUserId,
       postId: postId,
       commentId: commentId,
@@ -158,7 +148,7 @@ exports.createSampleNotifications = async (req, res) => {
 
 exports.testNotification = async (req, res) => {
   try {
-    const { userId, type = "like", message = "Test notification", postId = null, metadata = null } = req.body;
+    const { userId, type = "like", message = "Test notification" } = req.body;
 
     if (!userId) {
       return res.status(400).json({ error: "User ID is required" });
@@ -169,9 +159,8 @@ exports.testNotification = async (req, res) => {
       type,
       message,
       null,
-      postId,
       null,
-      metadata
+      null
     );
 
     if (notification) {
@@ -189,39 +178,6 @@ exports.testNotification = async (req, res) => {
   }
 };
 
-exports.testInterestNotification = async (req, res) => {
-  try {
-    const { userId, category = "Tech", hashtags = ["Tech", "technology"] } = req.body;
-
-    if (!userId) {
-      return res.status(400).json({ error: "User ID is required" });
-    }
-
-    const mockPost = {
-      _id: 'test-post-id',
-      title: 'Test Post',
-      author: { username: 'testuser' },
-      anonymous: false
-    };
-
-    const NotificationService = require('../services/notificationService');
-    await NotificationService.sendInterestBasedNotifications(
-      mockPost,
-      hashtags,
-      category,
-      null
-    );
-
-    res.json({
-      success: true,
-      message: "Interest-based notification test completed",
-    });
-  } catch (err) {
-    console.error("Error testing interest notification:", err);
-    res.status(500).json({ error: "Server error" });
-  }
-};
-
 module.exports = {
   emitNotification,
   createNotification,
@@ -230,5 +186,4 @@ module.exports = {
   clearAllNotifications: exports.clearAllNotifications,
   createSampleNotifications: exports.createSampleNotifications,
   testNotification: exports.testNotification,
-  testInterestNotification: exports.testInterestNotification,
 };

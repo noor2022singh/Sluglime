@@ -86,19 +86,11 @@ export default function NotificationsScreen() {
             markAsRead();
         }
 
-        if (notification.link) {
-            router.push(notification.link);
-        } else if (notification.type === 'community_request' && notification.metadata?.communityId) {
+        if (notification.type === 'community_request' && notification.metadata?.communityId) {
+            // Navigate to community and show pending requests
             router.push(`/community/${notification.metadata.communityId}`);
         } else if (notification.postId) {
             router.push(`/posts/${notification.postId}`);
-        } else if (notification.type === 'new_post' || notification.type === 'community_post' || 
-                   notification.type === 'new_whistle' || notification.type === 'community_whistle') {
-            if (notification.postId) {
-                router.push(`/posts/${notification.postId}`);
-            } else if (notification.metadata?.submissionId) {
-                router.push('/whistle-approvals');
-            }
         } else if (notification.fromUser) {
             router.push(`/user/${notification.fromUser._id}`);
         }
@@ -122,20 +114,16 @@ export default function NotificationsScreen() {
                 return 'check-circle';
             case 'community_rejected':
                 return 'cancel';
-            case 'new_post':
-            case 'community_post':
-                return 'article';
-            case 'new_whistle':
-            case 'community_whistle':
-                return 'report';
             case 'whistle_pending':
-                return 'schedule';
+                return 'hourglass-empty';
             case 'whistle_review':
-                return 'admin-panel-settings';
+                return 'rate-review';
             case 'whistle_approved':
-                return 'check-circle';
+                return 'verified';
             case 'whistle_rejected':
-                return 'cancel';
+                return 'block';
+            case 'interest_match':
+                return 'local-offer';
             default:
                 return 'notifications';
         }
@@ -157,20 +145,16 @@ export default function NotificationsScreen() {
                 return '#4CAF50';
             case 'community_rejected':
                 return '#f44336';
-            case 'new_post':
-            case 'community_post':
-                return '#2196F3';
-            case 'new_whistle':
-            case 'community_whistle':
-                return '#FF9800';
             case 'whistle_pending':
-                return '#FFC107';
+                return '#FFB300';
             case 'whistle_review':
-                return '#9C27B0';
+                return '#9E9E9E';
             case 'whistle_approved':
                 return '#4CAF50';
             case 'whistle_rejected':
                 return '#f44336';
+            case 'interest_match':
+                return theme.tint;
             default:
                 return theme.tint;
         }

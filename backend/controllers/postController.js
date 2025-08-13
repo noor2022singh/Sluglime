@@ -31,7 +31,14 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-
+async function sendInterestEmail(to, post) {
+  await transporter.sendMail({
+    from: "Sluglime <garsh5444@gmail.com>",
+    to,
+    subject: "New whistle relevant to your interests",
+    text: `A new whistle was posted: ${post.title}\n\n${post.content}\n\nView it in the app!`,
+  });
+}
 
 exports.getPosts = async (req, res) => {
   try {
@@ -306,17 +313,7 @@ exports.createPost = async (req, res) => {
             );
           }
         }
-        
-        const NotificationService = require('../services/notificationService');
-        await NotificationService.sendWhistleNotifications(
-          submission, 
-          hashtags, 
-          category, 
-          community
-        );
-      } catch (e) {
-        console.error('Error sending whistle notifications:', e);
-      }
+      } catch (e) {}
       return res.status(202).json({ success: true, pending: true, submissionId: submission._id });
     }
 
@@ -340,8 +337,46 @@ exports.createPost = async (req, res) => {
       }
     }
 
-    const NotificationService = require('../services/notificationService');
-    await NotificationService.sendInterestBasedNotifications(post, hashtags, category, community);
+  try {
+    const isCommunity = !!community;
+    const userQuery = { interests: { $exists: true, $ne: [] } };
+    let candidateUsers = await User.find(userQuery).select('interests _id');
+
+    if (isCommunity) {
+      const Community = require('../models/Community');
+      const communityDoc = await Community.findById(community).select('members');
+      const memberIdSet = new Set((communityDoc?.members || []).map(id => id.toString()));
+      candidateUsers = candidateUsers.filter(u => memberIdSet.has(u._id.toString()));
+    }
+
+    const lowerHashtags = (post.hashtags || hashtags || []).map(h => h.toLowerCase());
+    const lowerCategory = category ? category.toLowerCase() : null;
+
+    const recipients = candidateUsers.filter(u => {
+      const interestsLower = (u.interests || []).map(i => i.toLowerCase());
+      const hasTagMatch = lowerHashtags.some(t => interestsLower.includes(t));
+      const hasCategoryMatch = lowerCategory ? interestsLower.includes(lowerCategory) : false;
+      return hasTagMatch || hasCategoryMatch;
+    }).filter(u => {
+      if (!post.anonymous && author && u._id.toString() === String(author)) return false;
+      return true;
+    });
+
+    const displayName = post.anonymous ? 'Anonymous' : (post.author?.username || post.author?.name || 'Someone');
+    const titleForMsg = title || (post.content ? post.content.slice(0, 60) : 'New post');
+    for (const recipient of recipients) {
+      await createNotification(
+        recipient._id,
+        'interest_match',
+        `${displayName} posted: ${titleForMsg}`,
+        post.anonymous ? null : (post.author?._id || author || null),
+        post._id,
+        null,
+        { isCommunityPost: !!post.isCommunityPost }
+      );
+    }
+  } catch (notifyErr) {
+  }
 
     res.status(201).json(post);
   } catch (err) {
