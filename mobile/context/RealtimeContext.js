@@ -65,6 +65,7 @@ export function RealtimeProvider({ children }) {
           likes: data.likes,
           shares: data.shares,
           comments: data.comments,
+          reposts: data.reposts,
           timestamp: Date.now(),
         },
       }));

@@ -81,18 +81,30 @@ export default function NotificationsScreen() {
         }
     };
 
+    const resolvePostId = (notif) => {
+        if (!notif?.postId) return null;
+        if (typeof notif.postId === 'string') return notif.postId;
+        if (typeof notif.postId === 'object') return notif.postId._id || notif.postId.id || null;
+        return null;
+    };
+
     const handleNotificationPress = (notification) => {
         if (!notification.read) {
             markAsRead();
         }
 
         if (notification.type === 'community_request' && notification.metadata?.communityId) {
-            // Navigate to community and show pending requests
             router.push(`/community/${notification.metadata.communityId}`);
-        } else if (notification.postId) {
-            router.push(`/posts/${notification.postId}`);
-        } else if (notification.fromUser) {
-            router.push(`/user/${notification.fromUser._id}`);
+        } else {
+            const postId = resolvePostId(notification);
+            if (postId) {
+                router.push({ pathname: '/posts/[id]', params: { id: String(postId) } });
+            } else if (notification.fromUser) {
+                const userId = notification.fromUser?._id || notification.fromUser?.id || notification.fromUser;
+                if (userId) {
+                  router.push({ pathname: '/user/[id]', params: { id: String(userId) } });
+                }
+            }
         }
     };
 

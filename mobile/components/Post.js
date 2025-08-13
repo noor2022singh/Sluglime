@@ -167,6 +167,8 @@ export default function Post({
       if (update.comments !== undefined) {
         setCommentCount(update.comments);
       }
+      if (update.reposts !== undefined) {
+      }
       clearPostUpdate(_id);
     }
   }, [getPostUpdate(_id)]);
@@ -316,7 +318,6 @@ export default function Post({
   const handleShareDialog = async () => {
     setShareDialogLoading(true);
     try {
-      // Use HTTPS URL on your domain so it is clickable and supports App/Universal Links
       const shareLink = `${WEB_BASE_URL}/posts/${_id}`;
       
       const authorName = anonymous ? 'Anonymous' : (author?.name || author?.username || 'Unknown');
@@ -420,7 +421,6 @@ export default function Post({
                   backgroundColor: "#2a2a2a",
                   justifyContent: "center",
                   alignItems: "center",
-                  // Additional 3D effect for placeholder
                   borderTopColor: "#444444",
                   borderBottomColor: "#111111",
                   borderLeftColor: "#333333",
@@ -457,7 +457,6 @@ export default function Post({
             marginBottom: 12,
             borderLeftWidth: 3,
             borderLeftColor: theme.tint,
-            // 3D inset effect
             shadowColor: "#000",
             shadowOpacity: 0.25,
             shadowRadius: 4,
@@ -499,7 +498,6 @@ export default function Post({
             paddingVertical: 4,
             marginBottom: 8,
             marginTop: 6,
-            // Enhanced 3D effect
             shadowColor: "#ffd700",
             shadowOpacity: 0.4,
             shadowRadius: 6,
@@ -566,7 +564,6 @@ export default function Post({
             overflow: 'hidden',
             marginBottom: 6,
             marginTop: -2,
-            // 3D frame effect
             shadowColor: "#000",
             shadowOpacity: 0.3,
             shadowRadius: 6,
@@ -613,7 +610,6 @@ export default function Post({
                   marginRight: 12,
                   borderRadius: 12,
                   overflow: 'hidden',
-                  // Enhanced 3D effect
                   shadowColor: "#000",
                   shadowOpacity: 0.3,
                   shadowRadius: 6,
@@ -1047,18 +1043,15 @@ const styles = StyleSheet.create({
     padding: 16,
     marginVertical: 6,
     marginHorizontal: 10,
-    // 3D Shadow effects
     shadowColor: "#000",
     shadowOpacity: 0.25,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 6 },
     elevation: 8,
-    // Additional 3D depth
     borderTopColor: "#2a2a2a",
     borderBottomColor: "#0a0a0a",
     borderLeftColor: "#1f1f1f",
     borderRightColor: "#1f1f1f",
-    // Subtle gradient effect simulation
     backgroundGradient: 'linear-gradient(145deg, #1f1f1f, #151515)',
   },
   header: {
@@ -1083,13 +1076,11 @@ const styles = StyleSheet.create({
     marginRight: 0,
     borderWidth: 2,
     borderColor: "#444444",
-    // 3D avatar effect
     shadowColor: "#000",
     shadowOpacity: 0.3,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 3 },
     elevation: 6,
-    // Inner glow effect
     borderTopColor: "#555555",
     borderBottomColor: "#222222",
   },
@@ -1119,7 +1110,6 @@ const styles = StyleSheet.create({
     padding: 6,
     borderRadius: 8,
     backgroundColor: "#1f1f1f",
-    // 3D button effect
     shadowColor: "#000",
     shadowOpacity: 0.25,
     shadowRadius: 3,
@@ -1191,7 +1181,6 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: "#2a2a2a",
-    // 3D inset effect for the action bar
     backgroundColor: "#171717",
     marginHorizontal: -16,
     marginBottom: -16,
@@ -1213,7 +1202,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     borderRadius: 8,
     backgroundColor: "#1f1f1f",
-    // 3D button effect
     shadowColor: "#000",
     shadowOpacity: 0.25,
     shadowRadius: 3,
@@ -1371,7 +1359,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.dark.tint,
     fontWeight: "600",
-    // 3D hashtag effect
     shadowColor: "#000",
     shadowOpacity: 0.25,
     shadowRadius: 3,

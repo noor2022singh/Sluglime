@@ -64,10 +64,14 @@ exports.getPosts = async (req, res) => {
       .populate("community", "name")
       .sort({ createdAt: -1 });
 
-    const mappedPosts = posts.map((post) => {
+    const counts = await Promise.all(
+      posts.map((p) => Comment.countDocuments({ post: p._id }))
+    );
+    const mappedPosts = posts.map((post, idx) => {
       if (post.anonymous) {
         return {
           ...post.toObject(),
+          comments: counts[idx] || 0,
           author: {
             username: "Anonymous",
             name: "Anonymous",
@@ -76,7 +80,7 @@ exports.getPosts = async (req, res) => {
           },
         };
       }
-      return post;
+      return { ...post.toObject(), comments: counts[idx] || 0 };
     });
     res.json(mappedPosts);
   } catch (err) {
@@ -107,17 +111,19 @@ exports.getWhistleBlowPosts = async (req, res) => {
       return res.json([]);
     }
 
-    const mappedPosts = posts.map((post) => {
-      return {
-        ...post.toObject(),
-        author: {
-          username: "Anonymous",
-          name: "Anonymous",
-          avatar: "",
-          _id: undefined,
-        },
-      };
-    });
+    const counts = await Promise.all(
+      posts.map((p) => Comment.countDocuments({ post: p._id }))
+    );
+    const mappedPosts = posts.map((post, idx) => ({
+      ...post.toObject(),
+      comments: counts[idx] || 0,
+      author: {
+        username: "Anonymous",
+        name: "Anonymous",
+        avatar: "",
+        _id: undefined,
+      },
+    }));
     res.json(mappedPosts);
   } catch (err) {
     console.error("Whistle blow posts error:", err);
@@ -145,10 +151,14 @@ exports.getPostsByUser = async (req, res) => {
       })
       .sort({ createdAt: -1 });
 
-    const mappedPosts = posts.map((post) => {
+    const counts = await Promise.all(
+      posts.map((p) => Comment.countDocuments({ post: p._id }))
+    );
+    const mappedPosts = posts.map((post, idx) => {
       if (post.anonymous) {
         return {
           ...post.toObject(),
+          comments: counts[idx] || 0,
           author: {
             username: "Anonymous",
             name: "Anonymous",
@@ -157,7 +167,7 @@ exports.getPostsByUser = async (req, res) => {
           },
         };
       }
-      return post;
+      return { ...post.toObject(), comments: counts[idx] || 0 };
     });
 
     res.json(mappedPosts);
@@ -319,6 +329,19 @@ exports.createPost = async (req, res) => {
 
     const post = new Post(postData);
     await post.save();
+    try {
+      const io = req.app.get("io");
+      if (io) {
+        const totalComments = await Comment.countDocuments({ post: post._id });
+        io.emit("post_updated", {
+          postId: post._id,
+          likes: Array.isArray(post.likes) ? post.likes.length : 0,
+          shares: post.shares || 0,
+          comments: totalComments,
+          reposts: post.reposts || 0,
+        });
+      }
+    } catch (e) {}
 
     if (community) {
       const Community = require("../models/Community");
@@ -334,6 +357,17 @@ exports.createPost = async (req, res) => {
       if (originalPost) {
         originalPost.reposts += 1;
         await originalPost.save();
+        const io = req.app.get("io");
+        if (io) {
+          const totalComments = await Comment.countDocuments({ post: originalPost._id });
+          io.emit("post_updated", {
+            postId: originalPost._id,
+            likes: Array.isArray(originalPost.likes) ? originalPost.likes.length : 0,
+            shares: originalPost.shares || 0,
+            comments: totalComments,
+            reposts: originalPost.reposts || 0,
+          });
+        }
       }
     }
 
@@ -412,10 +446,18 @@ exports.likePost = async (req, res) => {
 
     const io = req.app.get("io");
     if (io) {
+      const totalComments = await Comment.countDocuments({ post: post._id });
       io.emit("post_liked", {
         postId: post._id,
         likes: post.likes.length,
         liked: index === -1,
+      });
+      io.emit("post_updated", {
+        postId: post._id,
+        likes: post.likes.length,
+        shares: post.shares || 0,
+        comments: totalComments,
+        reposts: post.reposts || 0,
       });
     }
 
@@ -434,9 +476,17 @@ exports.sharePost = async (req, res) => {
 
     const io = req.app.get("io");
     if (io) {
+      const totalComments = await Comment.countDocuments({ post: post._id });
       io.emit("post_shared", {
         postId: post._id,
         shares: post.shares,
+      });
+      io.emit("post_updated", {
+        postId: post._id,
+        likes: Array.isArray(post.likes) ? post.likes.length : 0,
+        shares: post.shares || 0,
+        comments: totalComments,
+        reposts: post.reposts || 0,
       });
     }
 
@@ -574,10 +624,14 @@ exports.getFollowingFeed = async (req, res) => {
     const posts = await Post.find(filter)
       .populate("author", "username name avatar")
       .sort({ createdAt: -1 });
-    const mappedPosts = posts.map((post) => {
+    const counts = await Promise.all(
+      posts.map((p) => Comment.countDocuments({ post: p._id }))
+    );
+    const mappedPosts = posts.map((post, idx) => {
       if (post.anonymous) {
         return {
           ...post.toObject(),
+          comments: counts[idx] || 0,
           author: {
             username: "Anonymous",
             name: "Anonymous",
@@ -586,7 +640,7 @@ exports.getFollowingFeed = async (req, res) => {
           },
         };
       }
-      return post;
+      return { ...post.toObject(), comments: counts[idx] || 0 };
     });
     res.json(mappedPosts);
   } catch (err) {
@@ -624,10 +678,14 @@ exports.getHotrisingFeed = async (req, res) => {
 
     postsWithRatio.sort((a, b) => b.hotrisingRatio - a.hotrisingRatio);
 
-    const mappedPosts = postsWithRatio.map((post) => {
+    const counts = await Promise.all(
+      postsWithRatio.map((p) => Comment.countDocuments({ post: p._id }))
+    );
+    const mappedPosts = postsWithRatio.map((post, idx) => {
       if (post.anonymous) {
         return {
           ...post,
+          comments: counts[idx] || 0,
           author: {
             username: "Anonymous",
             name: "Anonymous",
@@ -636,7 +694,7 @@ exports.getHotrisingFeed = async (req, res) => {
           },
         };
       }
-      return post;
+      return { ...post, comments: counts[idx] || 0 };
     });
     res.json(mappedPosts);
   } catch (err) {
@@ -689,6 +747,16 @@ exports.deletePost = async (req, res) => {
       }
     }
     await post.deleteOne();
+    const io = req.app.get("io");
+    if (io) {
+      io.emit("post_updated", {
+        postId: req.params.id,
+        likes: 0,
+        shares: 0,
+        comments: 0,
+        reposts: 0,
+      });
+    }
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: "Server error" });
@@ -741,6 +809,7 @@ exports.getPostById = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+
 
 exports.getShareLink = async (req, res) => {
   try {

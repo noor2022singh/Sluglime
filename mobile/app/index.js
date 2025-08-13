@@ -626,9 +626,15 @@ function HomeScreen() {
                   if (item.type === 'whistle_review' && item.metadata?.submissionId) {
                     router.push(`/whistle-approvals?submissionId=${item.metadata.submissionId}`);
                   } else if (item.postId) {
-                    router.push(`/posts/${item.postId}`);
+                    const postId = typeof item.postId === 'string' ? item.postId : (item.postId?._id || item.postId?.id);
+                    if (postId) {
+                      router.push(`/posts/${postId}`);
+                    }
                   } else if (item.fromUser) {
-                    router.push(`/user/${item.fromUser._id}`);
+                    const userId = typeof item.fromUser === 'string' ? item.fromUser : (item.fromUser?._id || item.fromUser?.id);
+                    if (userId) {
+                      router.push(`/user/${userId}`);
+                    }
                   }
                 }}
               >
