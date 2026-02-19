@@ -86,3 +86,48 @@ Then open: `http://localhost:3000`
 - `GET /api/posts/[postId]`
 - `PATCH /api/posts/[postId]/like`
 - `GET,POST /api/comments`
+
+
+## 7) If your branch is failing to merge (conflicts with previous web code)
+
+If `web/` already exists in your target branch and causes merge conflicts, use this safe approach:
+
+1. **Rebase and resolve only the conflicted files you want to keep**
+   ```bash
+   git fetch origin
+   git rebase origin/<target-branch>
+   ```
+
+2. For each conflict in `web/`, choose one side quickly:
+   - keep incoming target branch version:
+     ```bash
+     git checkout --theirs <file>
+     ```
+   - keep this PR version:
+     ```bash
+     git checkout --ours <file>
+     ```
+   - then:
+     ```bash
+     git add <file>
+     ```
+
+3. Continue rebase:
+   ```bash
+   git rebase --continue
+   ```
+
+4. If you only want this web app code and nothing else, cherry-pick this commit directly on top of your target branch:
+   ```bash
+   git checkout <target-branch>
+   git checkout -b web-integration
+   git cherry-pick 07e0851
+   ```
+
+5. Run:
+   ```bash
+   npm install
+   npm run dev
+   ```
+
+This project is fully isolated under `web/` so it should not affect `mobile/` or `backend/` unless the same `web/` files were already modified in your target branch.
