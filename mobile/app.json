@@ -2,7 +2,7 @@
   "expo": {
     "name": "SlugLime",
     "slug": "sluglime",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/logo.png",
     "scheme": "sluglime",
@@ -28,7 +28,7 @@
         "applinks:sluglime.in",
         "applinks:sluglime.in"
       ],
-      "bundleIdentifier": "com.anonymous.sluglime",
+      "bundleIdentifier": "com.sluglime.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -41,7 +41,8 @@
       "edgeToEdgeEnabled": true,
       "navigationBarColor": "#000000",
       "statusBarColor": "#000000",
-      "package": "com.anonymous.sluglime",
+      "package": "com.sluglime.app",
+      "versionCode": 2,  
       "intentFilters": [
         {
           "action": "VIEW",

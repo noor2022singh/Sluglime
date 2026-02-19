@@ -11,12 +11,19 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "ios": {
+        "simulator": true
       }
     },
-    "production": {
-      "distribution": "internal",
+"production": {
+      "distribution": "store",
+      "autoIncrement": false,
       "android": {
-        "buildType": "apk"
+        "buildType": "app-bundle"
+      },
+      "ios": {
+        "simulator": false
       }
     }
   },
